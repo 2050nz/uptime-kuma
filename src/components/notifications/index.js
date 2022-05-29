@@ -31,6 +31,7 @@ import Gorush from "./Gorush.vue";
 import Alerta from "./Alerta.vue";
 import OneBot from "./OneBot.vue";
 import PushDeer from "./PushDeer.vue";
+import SMTP2GO from "./SMTP2GO.vue";
 
 /**
  * Manage all notification form.
@@ -41,6 +42,7 @@ const NotificationFormList = {
     "telegram": Telegram,
     "webhook": Webhook,
     "smtp": STMP,
+    "smtp2go": SMTP2GO,
     "discord": Discord,
     "teams": Teams,
     "signal": Signal,

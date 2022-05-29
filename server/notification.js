@@ -33,6 +33,7 @@ const Gorush = require("./notification-providers/gorush");
 const Alerta = require("./notification-providers/alerta");
 const OneBot = require("./notification-providers/onebot");
 const PushDeer = require("./notification-providers/pushdeer");
+const SMTP2GO = require("./notification-providers/smtp2go");
 
 class Notification {
 
@@ -78,6 +79,7 @@ class Notification {
             new Alerta(),
             new OneBot(),
             new PushDeer(),
+            new SMTP2GO(),
         ];
 
         for (let item of list) {

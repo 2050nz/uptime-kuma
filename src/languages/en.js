@@ -201,6 +201,8 @@ export default {
     webhookJsonDesc: "{0} is good for any modern HTTP servers such as Express.js",
     webhookFormDataDesc: "{multipart} is good for PHP. The JSON will need to be parsed with {decodeFunction}",
     smtp: "Email (SMTP)",
+    smtp2go: "Email Via SMTP2GO Api",
+    aboutSMTP2GO: "More about SMTP2GO",
     secureOptionNone: "None / STARTTLS (25, 587)",
     secureOptionTLS: "TLS (465)",
     "Ignore TLS Error": "Ignore TLS Error",

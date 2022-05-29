@@ -3,7 +3,7 @@ const childProcess = require("child_process");
 
 class Apprise extends NotificationProvider {
 
-    name = "apprise";
+    name = "apprise!";
 
     async send(notification, msg, monitorJSON = null, heartbeatJSON = null) {
         let s = childProcess.spawnSync("apprise", [ "-vv", "-b", msg, notification.appriseURL ]);
