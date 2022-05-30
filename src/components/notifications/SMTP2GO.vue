@@ -15,6 +15,16 @@
                 type="text" class="form-control"
             >
         </div>
+ <div class="mb-3">
+            <label for="smtp2go-recipientemail" class="form-label">{{ $t("SMTP2GO From Email") }} <span
+                style="color: red;"
+            ><sup>*</sup></span></label>
+            <input
+                id="smtp2go-recipientemail" v-model="$parent.notification.smtp2go_from_email_address"
+                type="text" class="form-control"
+            >
+        </div>
+        
         <div class="form-text">
             <span style="color: red;"><sup>*</sup></span>{{ $t("Required") }}
             <!-- <i18n-t tag="p" keypath="aboutSMTP2GO" style="margin-top: 8px;">

@@ -43,7 +43,7 @@ const NotificationFormList = {
     "telegram": Telegram,
     "webhook": Webhook,
     "smtp": STMP,
-    "smtp2go": SMTP2GO,
+    "SMTP2GO": SMTP2GO,
     "discord": Discord,
     "teams": Teams,
     "signal": Signal,
