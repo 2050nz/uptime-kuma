@@ -1,5 +1,5 @@
 const NotificationProvider = require("./notification-provider");
-const SMTP2GOApi = require("@smtp2go/smtp2go-api");
+const SMTP2GOApi = require("smtp2go-nodejs").default;
 class SMTP2GO extends NotificationProvider {
     name = "SMTP2GO";
 
@@ -9,7 +9,7 @@ class SMTP2GO extends NotificationProvider {
         if (heartbeatJSON) {
             bodyTextContent = `${msg}\nTime (UTC): ${heartbeatJSON["time"]}`;
         }
-        const s = SMTP2GOApi.default(notification.smtp2go_api_key);
+        const s = SMTP2GOApi(notification.smtp2go_api_key);
         const service = s.mail().from({
             email: notification.smtp2go_from_email_address
         }).to({
