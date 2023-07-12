@@ -130,8 +130,21 @@
 import { Modal } from "bootstrap";
 import VueMultiselect from "vue-multiselect";
 import { useToast } from "vue-toastification";
+import { colorOptions } from "../util-frontend";
 import Tag from "../components/Tag.vue";
 const toast = useToast();
+
+/**
+ * @typedef Tag
+ * @type {object}
+ * @property {number | undefined} id
+ * @property {number | undefined} monitor_id
+ * @property {number | undefined} tag_id
+ * @property {string} value
+ * @property {string} name
+ * @property {string} color
+ * @property {boolean | undefined} new
+ */
 
 export default {
     components: {
@@ -139,6 +152,9 @@ export default {
         VueMultiselect,
     },
     props: {
+        /** Array of tags to be pre-selected
+         * @type {Tag[]}
+         */
         preSelectedTags: {
             type: Array,
             default: () => [],
@@ -146,10 +162,14 @@ export default {
     },
     data() {
         return {
+            /** @type {Modal | null} */
             modal: null,
+            /** @type {Tag[]} */
             existingTags: [],
             processing: false,
+            /** @type {Tag[]} */
             newTags: [],
+            /** @type {Tag[]} */
             deleteTags: [],
             newDraftTag: {
                 name: null,
@@ -175,24 +195,7 @@ export default {
             return this.preSelectedTags.concat(this.newTags).filter(tag => !this.deleteTags.find(monitorTag => monitorTag.id === tag.id));
         },
         colorOptions() {
-            return [
-                { name: this.$t("Gray"),
-                    color: "#4B5563" },
-                { name: this.$t("Red"),
-                    color: "#DC2626" },
-                { name: this.$t("Orange"),
-                    color: "#D97706" },
-                { name: this.$t("Green"),
-                    color: "#059669" },
-                { name: this.$t("Blue"),
-                    color: "#2563EB" },
-                { name: this.$t("Indigo"),
-                    color: "#4F46E5" },
-                { name: this.$t("Purple"),
-                    color: "#7C3AED" },
-                { name: this.$t("Pink"),
-                    color: "#DB2777" },
-            ];
+            return colorOptions(this);
         },
         validateDraftTag() {
             let nameInvalid = false;
@@ -203,7 +206,7 @@ export default {
                 nameInvalid = false;
                 valueInvalid = false;
                 invalid = false;
-            } else if (this.existingTags.filter(tag => tag.name === this.newDraftTag.name).length > 0) {
+            } else if (this.existingTags.filter(tag => tag.name === this.newDraftTag.name).length > 0 && this.newDraftTag.select == null) {
                 // Try to create new tag with existing name
                 nameInvalid = true;
                 invalid = true;
@@ -241,9 +244,11 @@ export default {
         this.getExistingTags();
     },
     methods: {
+        /** Show the add tag dialog */
         showAddDialog() {
             this.modal.show();
         },
+        /** Get all existing tags */
         getExistingTags() {
             this.$root.getSocket().emit("getTags", (res) => {
                 if (res.ok) {
@@ -253,6 +258,10 @@ export default {
                 }
             });
         },
+        /**
+         * Delete the specified tag
+         * @param {Object} tag Object representing tag to delete
+         */
         deleteTag(item) {
             if (item.new) {
                 // Undo Adding a new Tag
@@ -262,6 +271,13 @@ export default {
                 this.deleteTags.push(item);
             }
         },
+        /**
+         * Get colour of text inside the tag
+         * @param {Object} option The tag that needs to be displayed.
+         * Defaults to "white" unless the tag has no color, which will
+         * then return the body color (based on application theme)
+         * @returns string
+         */
         textColor(option) {
             if (option.color) {
                 return "white";
@@ -269,6 +285,7 @@ export default {
                 return this.$root.theme === "light" ? "var(--bs-body-color)" : "inherit";
             }
         },
+        /** Add a draft tag */
         addDraftTag() {
             console.log("Adding Draft Tag: ", this.newDraftTag);
             if (this.newDraftTag.select != null) {
@@ -296,6 +313,7 @@ export default {
             }
             this.clearDraftTag();
         },
+        /** Remove a draft tag */
         clearDraftTag() {
             this.newDraftTag = {
                 name: null,
@@ -307,26 +325,51 @@ export default {
             };
             this.modal.hide();
         },
+        /**
+         * Add a tag asynchronously
+         * @param {Object} newTag Object representing new tag to add
+         * @returns {Promise<void>}
+         */
         addTagAsync(newTag) {
             return new Promise((resolve) => {
                 this.$root.getSocket().emit("addTag", newTag, resolve);
             });
         },
+        /**
+         * Add a tag to a monitor asynchronously
+         * @param {number} tagId ID of tag to add
+         * @param {number} monitorId ID of monitor to add tag to
+         * @param {string} value Value of tag
+         * @returns {Promise<void>}
+         */
         addMonitorTagAsync(tagId, monitorId, value) {
             return new Promise((resolve) => {
                 this.$root.getSocket().emit("addMonitorTag", tagId, monitorId, value, resolve);
             });
         },
+        /**
+         * Delete a tag from a monitor asynchronously
+         * @param {number} tagId ID of tag to remove
+         * @param {number} monitorId ID of monitor to remove tag from
+         * @param {string} value Value of tag
+         * @returns {Promise<void>}
+         */
         deleteMonitorTagAsync(tagId, monitorId, value) {
             return new Promise((resolve) => {
                 this.$root.getSocket().emit("deleteMonitorTag", tagId, monitorId, value, resolve);
             });
         },
+        /** Handle pressing Enter key when inside the modal */
         onEnter() {
             if (!this.validateDraftTag.invalid) {
                 this.addDraftTag();
             }
         },
+        /**
+         * Submit the form data
+         * @param {number} monitorId ID of monitor this change affects
+         * @returns {void}
+         */
         async submit(monitorId) {
             console.log(`Submitting tag changes for monitor ${monitorId}...`);
             this.processing = true;

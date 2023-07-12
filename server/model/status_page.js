@@ -1,9 +1,127 @@
 const { BeanModel } = require("redbean-node/dist/bean-model");
 const { R } = require("redbean-node");
+const cheerio = require("cheerio");
+const { UptimeKumaServer } = require("../uptime-kuma-server");
+const jsesc = require("jsesc");
+const googleAnalytics = require("../google-analytics");
 
 class StatusPage extends BeanModel {
 
+    /**
+     * Like this: { "test-uptime.kuma.pet": "default" }
+     * @type {{}}
+     */
     static domainMappingList = { };
+
+    /**
+     *
+     * @param {Response} response
+     * @param {string} indexHTML
+     * @param {string} slug
+     */
+    static async handleStatusPageResponse(response, indexHTML, slug) {
+        let statusPage = await R.findOne("status_page", " slug = ? ", [
+            slug
+        ]);
+
+        if (statusPage) {
+            response.send(await StatusPage.renderHTML(indexHTML, statusPage));
+        } else {
+            response.status(404).send(UptimeKumaServer.getInstance().indexHTML);
+        }
+    }
+
+    /**
+     * SSR for status pages
+     * @param {string} indexHTML
+     * @param {StatusPage} statusPage
+     */
+    static async renderHTML(indexHTML, statusPage) {
+        const $ = cheerio.load(indexHTML);
+        const description155 = statusPage.description?.substring(0, 155) ?? "";
+
+        $("title").text(statusPage.title);
+        $("meta[name=description]").attr("content", description155);
+
+        if (statusPage.icon) {
+            $("link[rel=icon]")
+                .attr("href", statusPage.icon)
+                .removeAttr("type");
+
+            $("link[rel=apple-touch-icon]").remove();
+        }
+
+        const head = $("head");
+
+        if (statusPage.googleAnalyticsTagId) {
+            let escapedGoogleAnalyticsScript = googleAnalytics.getGoogleAnalyticsScript(statusPage.googleAnalyticsTagId);
+            head.append($(escapedGoogleAnalyticsScript));
+        }
+
+        // OG Meta Tags
+        let ogTitle = $("<meta property=\"og:title\" content=\"\" />").attr("content", statusPage.title);
+        head.append(ogTitle);
+
+        let ogDescription = $("<meta property=\"og:description\" content=\"\" />").attr("content", description155);
+        head.append(ogDescription);
+
+        // Preload data
+        // Add jsesc, fix https://github.com/louislam/uptime-kuma/issues/2186
+        const escapedJSONObject = jsesc(await StatusPage.getStatusPageData(statusPage), {
+            "isScriptContext": true
+        });
+
+        const script = $(`
+            <script id="preload-data" data-json="{}">
+                window.preloadData = ${escapedJSONObject};
+            </script>
+        `);
+
+        head.append(script);
+
+        // manifest.json
+        $("link[rel=manifest]").attr("href", `/api/status-page/${statusPage.slug}/manifest.json`);
+
+        return $.root().html();
+    }
+
+    /**
+     * Get all status page data in one call
+     * @param {StatusPage} statusPage
+     */
+    static async getStatusPageData(statusPage) {
+        // Incident
+        let incident = await R.findOne("incident", " pin = 1 AND active = 1 AND status_page_id = ? ", [
+            statusPage.id,
+        ]);
+
+        if (incident) {
+            incident = incident.toPublicJSON();
+        }
+
+        let maintenanceList = await StatusPage.getMaintenanceList(statusPage.id);
+
+        // Public Group List
+        const publicGroupList = [];
+        const showTags = !!statusPage.show_tags;
+
+        const list = await R.find("group", " public = 1 AND status_page_id = ? ORDER BY weight ", [
+            statusPage.id
+        ]);
+
+        for (let groupBean of list) {
+            let monitorGroup = await groupBean.toPublicJSON(showTags);
+            publicGroupList.push(monitorGroup);
+        }
+
+        // Response
+        return {
+            config: await statusPage.toPublicJSON(),
+            incident,
+            publicGroupList,
+            maintenanceList,
+        };
+    }
 
     /**
      * Loads domain mapping from DB
@@ -115,6 +233,7 @@ class StatusPage extends BeanModel {
             customCSS: this.custom_css,
             footerText: this.footer_text,
             showPoweredBy: !!this.show_powered_by,
+            googleAnalyticsId: this.google_analytics_tag_id,
         };
     }
 
@@ -135,6 +254,7 @@ class StatusPage extends BeanModel {
             customCSS: this.custom_css,
             footerText: this.footer_text,
             showPoweredBy: !!this.show_powered_by,
+            googleAnalyticsId: this.google_analytics_tag_id,
         };
     }
 
@@ -160,6 +280,34 @@ class StatusPage extends BeanModel {
         }
     }
 
+    /**
+     * Get list of maintenances
+     * @param {number} statusPageId ID of status page to get maintenance for
+     * @returns {Object} Object representing maintenances sanitized for public
+     */
+    static async getMaintenanceList(statusPageId) {
+        try {
+            const publicMaintenanceList = [];
+
+            let maintenanceIDList = await R.getCol(`
+                SELECT DISTINCT maintenance_id
+                FROM maintenance_status_page
+                WHERE status_page_id = ?
+            `, [ statusPageId ]);
+
+            for (const maintenanceID of maintenanceIDList) {
+                let maintenance = UptimeKumaServer.getInstance().getMaintenance(maintenanceID);
+                if (maintenance && await maintenance.isUnderMaintenance()) {
+                    publicMaintenanceList.push(await maintenance.toPublicJSON());
+                }
+            }
+
+            return publicMaintenanceList;
+
+        } catch (error) {
+            return [];
+        }
+    }
 }
 
 module.exports = StatusPage;

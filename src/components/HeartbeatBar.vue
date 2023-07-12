@@ -5,7 +5,7 @@
                 v-for="(beat, index) in shortBeatList"
                 :key="index"
                 class="beat"
-                :class="{ 'empty' : (beat === 0), 'down' : (beat.status === 0), 'pending' : (beat.status === 2) }"
+                :class="{ 'empty' : (beat === 0), 'down' : (beat.status === 0), 'pending' : (beat.status === 2), 'maintenance' : (beat.status === 3) }"
                 :style="beatStyle"
                 :title="getBeatTitle(beat)"
             />
@@ -17,14 +17,17 @@
 
 export default {
     props: {
+        /** Size of the heartbeat bar */
         size: {
             type: String,
             default: "big",
         },
+        /** ID of the monitor */
         monitorId: {
             type: Number,
             required: true,
         },
+        /** Array of the monitors heartbeats */
         heartbeatList: {
             type: Array,
             default: null,
@@ -160,12 +163,19 @@ export default {
         this.resize();
     },
     methods: {
+        /** Resize the heartbeat bar */
         resize() {
             if (this.$refs.wrap) {
                 this.maxBeat = Math.floor(this.$refs.wrap.clientWidth / (this.beatWidth + this.beatMargin * 2));
             }
         },
 
+        /**
+         * Get the title of the beat.
+         * Used as the hover tooltip on the heartbeat bar.
+         * @param {Object} beat Beat to get title from
+         * @returns {string}
+         */
         getBeatTitle(beat) {
             return `${this.$root.datetime(beat.time)}` + ((beat.msg) ? ` - ${beat.msg}` : "");
         },
@@ -199,6 +209,10 @@ export default {
 
         &.pending {
             background-color: $warning;
+        }
+
+        &.maintenance {
+            background-color: $maintenance;
         }
 
         &:not(.empty):hover {

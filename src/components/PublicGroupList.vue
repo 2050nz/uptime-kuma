@@ -39,7 +39,27 @@
                                             <font-awesome-icon v-if="editMode" icon="times" class="action remove me-3" @click="removeMonitor(group.index, monitor.index)" />
 
                                             <Uptime :monitor="monitor.element" type="24" :pill="true" />
-                                            {{ monitor.element.name }}
+                                            <a
+                                                v-if="showLink(monitor)"
+                                                :href="monitor.element.url"
+                                                class="item-name"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                            >
+                                                {{ monitor.element.name }}
+                                            </a>
+                                            <p v-else class="item-name"> {{ monitor.element.name }} </p>
+
+                                            <span
+                                                title="Setting"
+                                            >
+                                                <font-awesome-icon
+                                                    v-if="editMode"
+                                                    :class="{'link-active': true, 'btn-link': true}"
+                                                    icon="cog" class="action me-3"
+                                                    @click="$refs.monitorSettingDialog.show(group, monitor)"
+                                                />
+                                            </span>
                                         </div>
                                         <div v-if="showTags" class="tags">
                                             <Tag v-for="tag in monitor.element.tags" :key="tag" :item="tag" :size="'sm'" />
@@ -56,9 +76,11 @@
             </div>
         </template>
     </Draggable>
+    <MonitorSettingDialog ref="monitorSettingDialog" />
 </template>
 
 <script>
+import MonitorSettingDialog from "./MonitorSettingDialog.vue";
 import Draggable from "vuedraggable";
 import HeartbeatBar from "./HeartbeatBar.vue";
 import Uptime from "./Uptime.vue";
@@ -66,16 +88,19 @@ import Tag from "./Tag.vue";
 
 export default {
     components: {
+        MonitorSettingDialog,
         Draggable,
         HeartbeatBar,
         Uptime,
         Tag,
     },
     props: {
+        /** Are we in edit mode? */
         editMode: {
             type: Boolean,
             required: true,
         },
+        /** Should tags be shown? */
         showTags: {
             type: Boolean,
         }
@@ -94,12 +119,40 @@ export default {
 
     },
     methods: {
+        /**
+         * Remove the specified group
+         * @param {number} index Index of group to remove
+         */
         removeGroup(index) {
             this.$root.publicGroupList.splice(index, 1);
         },
 
+        /**
+         * Remove a monitor from a group
+         * @param {number} groupIndex Index of group to remove monitor
+         * from
+         * @param {number} index Index of monitor to remove
+         */
         removeMonitor(groupIndex, index) {
             this.$root.publicGroupList[groupIndex].monitorList.splice(index, 1);
+        },
+
+        /**
+         * Should a link to the monitor be shown?
+         * Attempts to guess if a link should be shown based upon if
+         * sendUrl is set and if the URL is default or not.
+         * @param {Object} monitor Monitor to check
+         * @param {boolean} [ignoreSendUrl=false] Should the presence of the sendUrl
+         * property be ignored. This will only work in edit mode.
+         * @returns {boolean}
+         */
+        showLink(monitor, ignoreSendUrl = false) {
+            // We must check if there are any elements in monitorList to
+            // prevent undefined errors if it hasn't been loaded yet
+            if (this.$parent.editMode && ignoreSendUrl && Object.keys(this.$root.monitorList).length) {
+                return this.$root.monitorList[monitor.element.id].type === "http" || this.$root.monitorList[monitor.element.id].type === "keyword";
+            }
+            return monitor.element.sendUrl && monitor.element.url && monitor.element.url !== "https://" && !this.editMode;
         },
     }
 };
@@ -117,6 +170,22 @@ export default {
 
 .monitor-list {
     min-height: 46px;
+}
+
+.item-name {
+    padding-left: 5px;
+    padding-right: 5px;
+    margin: 0;
+    display: inline-block;
+}
+
+.btn-link {
+    color: #bbbbbb;
+    margin-left: 5px;
+}
+
+.link-active {
+    color: $primary;
 }
 
 .flip-list-move {
@@ -147,6 +216,10 @@ export default {
     .item {
         padding: 13px 0 10px;
     }
+}
+
+.bg-maintenance {
+    background-color: $maintenance;
 }
 
 </style>

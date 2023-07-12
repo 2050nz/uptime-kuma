@@ -19,45 +19,21 @@
                 {{ $t("No Monitors, please") }} <router-link to="/add">{{ $t("add one") }}</router-link>
             </div>
 
-            <router-link v-for="(item, index) in sortedMonitorList" :key="index" :to="monitorURL(item.id)" class="item" :class="{ 'disabled': ! item.active }">
-                <div class="row">
-                    <div class="col-9 col-md-8 small-padding" :class="{ 'monitor-item': $root.userHeartbeatBar == 'bottom' || $root.userHeartbeatBar == 'none' }">
-                        <div class="info">
-                            <Uptime :monitor="item" type="24" :pill="true" />
-                            {{ item.name }}
-                        </div>
-                        <div class="tags">
-                            <Tag v-for="tag in item.tags" :key="tag" :item="tag" :size="'sm'" />
-                        </div>
-                    </div>
-                    <div v-show="$root.userHeartbeatBar == 'normal'" :key="$root.userHeartbeatBar" class="col-3 col-md-4">
-                        <HeartbeatBar size="small" :monitor-id="item.id" />
-                    </div>
-                </div>
-
-                <div v-if="$root.userHeartbeatBar == 'bottom'" class="row">
-                    <div class="col-12 bottom-style">
-                        <HeartbeatBar size="small" :monitor-id="item.id" />
-                    </div>
-                </div>
-            </router-link>
+            <MonitorListItem v-for="(item, index) in sortedMonitorList" :key="index" :monitor="item" :isSearch="searchText !== ''" />
         </div>
     </div>
 </template>
 
 <script>
-import HeartbeatBar from "../components/HeartbeatBar.vue";
-import Tag from "../components/Tag.vue";
-import Uptime from "../components/Uptime.vue";
+import MonitorListItem from "../components/MonitorListItem.vue";
 import { getMonitorRelativeURL } from "../util.ts";
 
 export default {
     components: {
-        Uptime,
-        HeartbeatBar,
-        Tag,
+        MonitorListItem,
     },
     props: {
+        /** Should the scrollbar be shown */
         scrollbar: {
             type: Boolean,
         },
@@ -69,15 +45,41 @@ export default {
         };
     },
     computed: {
+        /**
+         * Improve the sticky appearance of the list by increasing its
+         * height as user scrolls down.
+         * Not used on mobile.
+         */
         boxStyle() {
-            return {
-                height: `calc(100vh - 160px + ${this.windowTop}px)`,
-            };
+            if (window.innerWidth > 550) {
+                return {
+                    height: `calc(100vh - 160px + ${this.windowTop}px)`,
+                };
+            } else {
+                return {
+                    height: "calc(100vh - 160px)",
+                };
+            }
+
         },
 
         sortedMonitorList() {
             let result = Object.values(this.$root.monitorList);
 
+            // Simple filter by search text
+            // finds monitor name, tag name or tag value
+            if (this.searchText !== "") {
+                const loweredSearchText = this.searchText.toLowerCase();
+                result = result.filter(monitor => {
+                    return monitor.name.toLowerCase().includes(loweredSearchText)
+                    || monitor.tags.find(tag => tag.name.toLowerCase().includes(loweredSearchText)
+                    || tag.value?.toLowerCase().includes(loweredSearchText));
+                });
+            } else {
+                result = result.filter(monitor => monitor.parent === null);
+            }
+
+            // Filter result by active state, weight and alphabetical
             result.sort((m1, m2) => {
 
                 if (m1.active !== m2.active) {
@@ -103,17 +105,6 @@ export default {
                 return m1.name.localeCompare(m2.name);
             });
 
-            // Simple filter by search text
-            // finds monitor name, tag name or tag value
-            if (this.searchText !== "") {
-                const loweredSearchText = this.searchText.toLowerCase();
-                result = result.filter(monitor => {
-                    return monitor.name.toLowerCase().includes(loweredSearchText)
-                    || monitor.tags.find(tag => tag.name.toLowerCase().includes(loweredSearchText)
-                    || tag.value?.toLowerCase().includes(loweredSearchText));
-                });
-            }
-
             return result;
         },
     },
@@ -124,6 +115,7 @@ export default {
         window.removeEventListener("scroll", this.onScroll);
     },
     methods: {
+        /** Handle user scroll */
         onScroll() {
             if (window.top.scrollY <= 133) {
                 this.windowTop = window.top.scrollY;
@@ -131,9 +123,15 @@ export default {
                 this.windowTop = 133;
             }
         },
+        /**
+         * Get URL of monitor
+         * @param {number} id ID of monitor
+         * @returns {string} Relative URL of monitor
+         */
         monitorURL(id) {
             return getMonitorRelativeURL(id);
         },
+        /** Clear the search bar */
         clearSearchText() {
             this.searchText = "";
         }
@@ -186,6 +184,16 @@ export default {
 .search-icon {
     padding: 10px;
     color: #c0c0c0;
+
+    // Clear filter button (X)
+    svg[data-icon="times"] {
+        cursor: pointer;
+        transition: all ease-in-out 0.1s;
+
+        &:hover {
+            opacity: 0.5;
+        }
+    }
 }
 
 .search-input {
