@@ -29,8 +29,13 @@ function getGameList() {
     return gameList;
 }
 
+/**
+ * Handler for general events
+ * @param {Socket} socket Socket.io instance
+ * @param {UptimeKumaServer} server Uptime Kuma server
+ * @returns {void}
+ */
 module.exports.generalSocketHandler = (socket, server) => {
-
     socket.on("initServerTimezone", async (timezone) => {
         try {
             checkLogin(socket);
@@ -108,5 +113,15 @@ module.exports.generalSocketHandler = (socket, server) => {
             ok: false,
             msg: "Not found",
         });
+    });
+
+    // Disconnect all other socket clients of the user
+    socket.on("disconnectOtherSocketClients", async () => {
+        try {
+            checkLogin(socket);
+            server.disconnectAllSocketClients(socket.userID, socket.id);
+        } catch (e) {
+            log.warn("disconnectAllSocketClients", e.message);
+        }
     });
 };
