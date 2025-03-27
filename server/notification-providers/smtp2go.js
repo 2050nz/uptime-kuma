@@ -2,7 +2,9 @@ const NotificationProvider = require("./notification-provider");
 const SMTP2GOApi = require("smtp2go-nodejs").default;
 class SMTP2GO extends NotificationProvider {
     name = "SMTP2GO";
-
+    /**
+     * @inheritdoc
+     */
     async send(notification, msg, monitorJSON = null, heartbeatJSON = null) {
         const subject = msg;
         let bodyTextContent = msg;
