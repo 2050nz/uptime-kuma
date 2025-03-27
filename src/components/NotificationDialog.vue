@@ -152,6 +152,7 @@ export default {
                 "SMSEagle": "SMSEagle",
                 "SMSPartner": "SMS Partner",
                 "smtp": this.$t("smtp"),
+                "SMTP2GO": "SMTP2GO",
                 "stackfield": "Stackfield",
                 "teams": "Microsoft Teams",
                 "telegram": "Telegram",
