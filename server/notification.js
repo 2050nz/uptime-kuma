@@ -4,6 +4,7 @@ const Alerta = require("./notification-providers/alerta");
 const AlertNow = require("./notification-providers/alertnow");
 const AliyunSms = require("./notification-providers/aliyun-sms");
 const Apprise = require("./notification-providers/apprise");
+const Bale = require("./notification-providers/bale");
 const Bark = require("./notification-providers/bark");
 const Bitrix24 = require("./notification-providers/bitrix24");
 const ClickSendSMS = require("./notification-providers/clicksendsms");
@@ -11,10 +12,14 @@ const CallMeBot = require("./notification-providers/call-me-bot");
 const SMSC = require("./notification-providers/smsc");
 const DingDing = require("./notification-providers/dingding");
 const Discord = require("./notification-providers/discord");
+const Fluxer = require("./notification-providers/fluxer");
 const Elks = require("./notification-providers/46elks");
+const EgoSMS = require("./notification-providers/egosms");
 const Feishu = require("./notification-providers/feishu");
+const Notifery = require("./notification-providers/notifery");
 const FreeMobile = require("./notification-providers/freemobile");
 const GoogleChat = require("./notification-providers/google-chat");
+const GoogleSheets = require("./notification-providers/google-sheets");
 const Gorush = require("./notification-providers/gorush");
 const Gotify = require("./notification-providers/gotify");
 const GrafanaOncall = require("./notification-providers/grafana-oncall");
@@ -23,16 +28,19 @@ const HeiiOnCall = require("./notification-providers/heii-oncall");
 const Keep = require("./notification-providers/keep");
 const Kook = require("./notification-providers/kook");
 const Line = require("./notification-providers/line");
-const LineNotify = require("./notification-providers/linenotify");
 const LunaSea = require("./notification-providers/lunasea");
 const Matrix = require("./notification-providers/matrix");
 const Mattermost = require("./notification-providers/mattermost");
+const NextcloudTalk = require("./notification-providers/nextcloudtalk");
 const Nostr = require("./notification-providers/nostr");
 const Ntfy = require("./notification-providers/ntfy");
 const Octopush = require("./notification-providers/octopush");
+const OneChat = require("./notification-providers/onechat");
 const OneBot = require("./notification-providers/onebot");
 const Opsgenie = require("./notification-providers/opsgenie");
+const JiraServiceManagement = require("./notification-providers/jira-service-management");
 const PagerDuty = require("./notification-providers/pagerduty");
+const Pumble = require("./notification-providers/pumble");
 const FlashDuty = require("./notification-providers/flashduty");
 const PagerTree = require("./notification-providers/pagertree");
 const PromoSMS = require("./notification-providers/promosms");
@@ -54,6 +62,8 @@ const Stackfield = require("./notification-providers/stackfield");
 const Teams = require("./notification-providers/teams");
 const TechulusPush = require("./notification-providers/techulus-push");
 const Telegram = require("./notification-providers/telegram");
+const Teltonika = require("./notification-providers/teltonika");
+const Telnyx = require("./notification-providers/telnyx");
 const Threema = require("./notification-providers/threema");
 const Twilio = require("./notification-providers/twilio");
 const Splunk = require("./notification-providers/splunk");
@@ -67,15 +77,27 @@ const SMTP2GO = require("./notification-providers/smtp2go");
 const SevenIO = require("./notification-providers/sevenio");
 const Whapi = require("./notification-providers/whapi");
 const WAHA = require("./notification-providers/waha");
+const Evolution = require("./notification-providers/evolution");
 const GtxMessaging = require("./notification-providers/gtx-messaging");
 const Cellsynt = require("./notification-providers/cellsynt");
 const Onesender = require("./notification-providers/onesender");
 const Wpush = require("./notification-providers/wpush");
 const SendGrid = require("./notification-providers/send-grid");
+const Brevo = require("./notification-providers/brevo");
+const Resend = require("./notification-providers/resend");
 const YZJ = require("./notification-providers/yzj");
+const SMSPlanet = require("./notification-providers/sms-planet");
+const SpugPush = require("./notification-providers/spugpush");
+const SMSIR = require("./notification-providers/smsir");
+const { commandExists } = require("./util-server");
+const Whatsapp360messenger = require("./notification-providers/360messenger");
+const Webpush = require("./notification-providers/Webpush");
+const HaloPSA = require("./notification-providers/HaloPSA");
+const Max = require("./notification-providers/max");
+const VK = require("./notification-providers/vk");
+const VKTeams = require("./notification-providers/vkteams");
 
 class Notification {
-
     providerList = {};
 
     /**
@@ -94,6 +116,7 @@ class Notification {
             new AlertNow(),
             new AliyunSms(),
             new Apprise(),
+            new Bale(),
             new Bark(),
             new Bitrix24(),
             new ClickSendSMS(),
@@ -101,10 +124,13 @@ class Notification {
             new SMSC(),
             new DingDing(),
             new Discord(),
+            new Fluxer(),
             new Elks(),
+            new EgoSMS(),
             new Feishu(),
             new FreeMobile(),
             new GoogleChat(),
+            new GoogleSheets(),
             new Gorush(),
             new Gotify(),
             new GrafanaOncall(),
@@ -113,20 +139,23 @@ class Notification {
             new Keep(),
             new Kook(),
             new Line(),
-            new LineNotify(),
             new LunaSea(),
             new Matrix(),
             new Mattermost(),
+            new NextcloudTalk(),
             new Nostr(),
             new Ntfy(),
             new Octopush(),
+            new OneChat(),
             new OneBot(),
             new Onesender(),
             new Opsgenie(),
+            new JiraServiceManagement(),
             new PagerDuty(),
             new FlashDuty(),
             new PagerTree(),
             new PromoSMS(),
+            new Pumble(),
             new Pushbullet(),
             new PushDeer(),
             new Pushover(),
@@ -147,6 +176,8 @@ class Notification {
             new Teams(),
             new TechulusPush(),
             new Telegram(),
+            new Teltonika(),
+            new Telnyx(),
             new Threema(),
             new Twilio(),
             new Splunk(),
@@ -158,11 +189,24 @@ class Notification {
             new SevenIO(),
             new Whapi(),
             new WAHA(),
+            new Evolution(),
             new GtxMessaging(),
             new Cellsynt(),
             new Wpush(),
+            new Brevo(),
+            new Resend(),
+            new YZJ(),
+            new SMSPlanet(),
+            new SpugPush(),
+            new Notifery(),
+            new SMSIR(),
             new SendGrid(),
-            new YZJ()
+            new Whatsapp360messenger(),
+            new Webpush(),
+            new HaloPSA(),
+            new Max(),
+            new VK(),
+            new VKTeams(),
         ];
         for (let item of list) {
             if (!item.name) {
@@ -204,18 +248,18 @@ class Notification {
         let bean;
 
         if (notificationID) {
-            bean = await R.findOne("notification", " id = ? AND user_id = ? ", [
-                notificationID,
-                userID,
-            ]);
+            bean = await R.findOne("notification", " id = ? AND user_id = ? ", [notificationID, userID]);
 
             if (!bean) {
                 throw new Error("notification not found");
             }
-
         } else {
             bean = R.dispense("notification");
         }
+
+        // applyExisting is one time only, don't save it to database.
+        const applyExisting = notification.applyExisting || false;
+        notification.applyExisting = false;
 
         bean.name = notification.name;
         bean.user_id = userID;
@@ -223,7 +267,7 @@ class Notification {
         bean.is_default = notification.isDefault || false;
         await R.store(bean);
 
-        if (notification.applyExisting) {
+        if (applyExisting) {
             await applyNotificationEveryMonitor(bean.id, userID);
         }
 
@@ -237,10 +281,7 @@ class Notification {
      * @returns {Promise<void>}
      */
     static async delete(notificationID, userID) {
-        let bean = await R.findOne("notification", " id = ? AND user_id = ? ", [
-            notificationID,
-            userID,
-        ]);
+        let bean = await R.findOne("notification", " id = ? AND user_id = ? ", [notificationID, userID]);
 
         if (!bean) {
             throw new Error("notification not found");
@@ -251,14 +292,11 @@ class Notification {
 
     /**
      * Check if apprise exists
-     * @returns {boolean} Does the command apprise exist?
+     * @returns {Promise<boolean>} Does the command apprise exist?
      */
-    static checkApprise() {
-        let commandExistsSync = require("command-exists").sync;
-        let exists = commandExistsSync("apprise");
-        return exists;
+    static async checkApprise() {
+        return await commandExists("apprise");
     }
-
 }
 
 /**
@@ -268,9 +306,7 @@ class Notification {
  * @returns {Promise<void>}
  */
 async function applyNotificationEveryMonitor(notificationID, userID) {
-    let monitors = await R.getAll("SELECT id FROM monitor WHERE user_id = ?", [
-        userID
-    ]);
+    let monitors = await R.getAll("SELECT id FROM monitor WHERE user_id = ?", [userID]);
 
     for (let i = 0; i < monitors.length; i++) {
         let checkNotification = await R.findOne("monitor_notification", " monitor_id = ? AND notification_id = ? ", [

@@ -1,5 +1,6 @@
 const nodemailer = require("nodemailer");
 const NotificationProvider = require("./notification-provider");
+const { log } = require("../../src/util");
 
 class SMTP extends NotificationProvider {
     name = "smtp";
@@ -14,10 +15,24 @@ class SMTP extends NotificationProvider {
             host: notification.smtpHost,
             port: notification.smtpPort,
             secure: notification.smtpSecure,
-            tls: {
-                rejectUnauthorized: !notification.smtpIgnoreTLSError || false,
-            }
         };
+
+        // Handle TLS/STARTTLS options
+        if (!notification.smtpSecure && notification.smtpIgnoreSTARTTLS) {
+            // Disable STARTTLS completely for servers that don't support it
+            // Connection will remain unencrypted
+            log.warn(
+                "notification",
+                `SMTP notification using unencrypted connection (STARTTLS disabled) to ${notification.smtpHost}:${notification.smtpPort}`
+            );
+            config.ignoreTLS = true;
+        } else {
+            // SMTPS (implicit TLS on port 465)
+            // or STARTTLS (default behavior for ports 25, 587)
+            config.tls = {
+                rejectUnauthorized: !notification.smtpIgnoreTLSError || false,
+            };
+        }
 
         // Fix #1129
         if (notification.smtpDkimDomain) {
@@ -42,6 +57,7 @@ class SMTP extends NotificationProvider {
         // default values in case the user does not want to template
         let subject = msg;
         let body = msg;
+        let useHTMLBody = false;
         if (heartbeatJSON) {
             body = `${msg}\nTime (${heartbeatJSON["timezone"]}): ${heartbeatJSON["localDateTime"]}`;
         }
@@ -50,11 +66,11 @@ class SMTP extends NotificationProvider {
             // cannot end with whitespace as this often raises spam scores
             const customSubject = notification.customSubject?.trim() || "";
             const customBody = notification.customBody?.trim() || "";
-
             if (customSubject !== "") {
                 subject = await this.renderTemplate(customSubject, msg, monitorJSON, heartbeatJSON);
             }
             if (customBody !== "") {
+                useHTMLBody = notification.htmlBody || false;
                 body = await this.renderTemplate(customBody, msg, monitorJSON, heartbeatJSON);
             }
         }
@@ -67,7 +83,8 @@ class SMTP extends NotificationProvider {
             bcc: notification.smtpBCC,
             to: notification.smtpTo,
             subject: subject,
-            text: body,
+            // If the email body is custom, and the user wants it, set the email body as HTML
+            [useHTMLBody ? "html" : "text"]: body,
         });
 
         return okMsg;
