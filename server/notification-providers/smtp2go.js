@@ -1,5 +1,5 @@
 const NotificationProvider = require("./notification-provider");
-const SMTP2GOApi = require("smtp2go-nodejs").default;
+import SMTP2GOApi from "smtp2go-nodejs";
 class SMTP2GO extends NotificationProvider {
     name = "SMTP2GO";
     /**
